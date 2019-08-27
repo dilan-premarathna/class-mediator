@@ -7,6 +7,7 @@ import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.AbstractMediator;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -16,6 +17,7 @@ import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
@@ -103,7 +105,7 @@ public class SampleClassMediator extends AbstractMediator implements
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }else if(line_count=false){
+        } else if (line_count = false) {
             JSONObject obj = new JSONObject();
             Reader reader = null;
             try {
@@ -122,13 +124,13 @@ public class SampleClassMediator extends AbstractMediator implements
 
             switch (account_flow) {
                 case "Account":
-                    obj.put("Accounts", (int) obj.get("Accounts")-1);
+                    obj.put("Accounts", (int) obj.get("Accounts") - 1);
                 case "Exchange":
-                    obj.put("ExchangeRates", (int) obj.get("ExchangeRates")-1);
+                    obj.put("ExchangeRates", (int) obj.get("ExchangeRates") - 1);
                 case "Loan":
-                    obj.put("Loan", (int) obj.get("Loan")-1);
+                    obj.put("Loan", (int) obj.get("Loan") - 1);
                 case "Customer":
-                    obj.put("Customer", (int) obj.get("Customer")-1);
+                    obj.put("Customer", (int) obj.get("Customer") - 1);
             }
             try {
                 FileWriter fw = new FileWriter(File_Count_Path);
@@ -155,26 +157,29 @@ public class SampleClassMediator extends AbstractMediator implements
             e.printStackTrace();
         }
 
-        switch (account_flow) {
-            case "Account":
-                if((int) obj.get("Accounts")==0){mc.setProperty("Account_send_mail",true);}
-            case "Exchange":
-                if((int) obj.get("ExchangeRates")==0){mc.setProperty("ExchangeRates_send_mail",true);}
-            case "Loan":
-                if((int) obj.get("Loan")==0){mc.setProperty("Loan_send_mail",true);}
-            case "Customer":
-                if((int) obj.get("Customer")==0){mc.setProperty("Customer_send_mail",true);}
+        if ((int) obj.get("Accounts") == 0) {
+            mc.setProperty("Account_send_mail", true);
+        }
+        if ((int) obj.get("ExchangeRates") == 0) {
+
+            mc.setProperty("ExchangeRates_send_mail", true);
+        }
+        if ((int) obj.get("Loan") == 0) {
+            mc.setProperty("Loan_send_mail", true);
+        }
+        if ((int) obj.get("Customer") == 0) {
+            mc.setProperty("Customer_send_mail", true);
         }
 
         return true;
-        }
-
-        public void init (SynapseEnvironment synapseEnvironment){
-
-        }
-
-        public void destroy () {
-
-        }
     }
+
+    public void init(SynapseEnvironment synapseEnvironment) {
+
+    }
+
+    public void destroy() {
+
+    }
+}
 
