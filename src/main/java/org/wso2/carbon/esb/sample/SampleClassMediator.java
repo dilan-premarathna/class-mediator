@@ -26,7 +26,6 @@ public class SampleClassMediator extends AbstractMediator implements
 
     private static final Log log = LogFactory.getLog(SampleClassMediator.class);
     public static String File_Count_Path = System.getProperty("user.dir") + "/file_count.json";
-
     public boolean mediate(MessageContext mc) {
 
         Boolean line_count = false;
@@ -47,20 +46,6 @@ public class SampleClassMediator extends AbstractMediator implements
             JSONObject obj = new JSONObject();
             if (input_file.exists()) {
                 Path path = Paths.get(file_path);
-                switch (account_flow) {
-                    case "Account":
-                        mc.setProperty("Account_send_mail", false);
-                        break;
-                    case "ExchangeRate":
-                        mc.setProperty("ExchangeRate_send_mail", false);
-                        break;
-                    case "Loan":
-                        mc.setProperty("Loan_send_mail", false);
-                        break;
-                    case "Customer":
-                        mc.setProperty("Customer_send_mail", false);
-                        break;
-                }
 
                 try {
                     lineCount = Files.lines(path).count();
@@ -154,16 +139,16 @@ public class SampleClassMediator extends AbstractMediator implements
 
             switch (account_flow) {
                 case "Account":
-                    obj.put("Account", (int) obj.get("Account") - 1);
+                    obj.put("Account", Integer.parseInt(obj.get("Account").toString()) - 1);
                     break;
                 case "ExchangeRate":
-                    obj.put("ExchangeRate", (int) obj.get("ExchangeRate") - 1);
+                    obj.put("ExchangeRate", Integer.parseInt(obj.get("ExchangeRate").toString()) - 1);
                     break;
                 case "Loan":
-                    obj.put("Loan", (int) obj.get("Loan") - 1);
+                    obj.put("Loan", Integer.parseInt(obj.get("Loan").toString()) - 1);
                     break;
                 case "Customer":
-                    obj.put("Customer", (int) obj.get("Customer") - 1);
+                    obj.put("Customer", Integer.parseInt(obj.get("Customer").toString()) - 1);
                     break;
             }
 
@@ -193,20 +178,28 @@ public class SampleClassMediator extends AbstractMediator implements
             e.printStackTrace();
         }
 
-        if (Integer.parseInt((String) obj.get("Account")) == 0) {
-            mc.setProperty("Account_send_mail", true);
+        if (Integer.parseInt(obj.get("Account").toString()) == 0) {
+            mc.setProperty("Account_send_mail", "true");
+        } else {
+            mc.setProperty("Account_send_mail", "false");
         }
 
-        if (Integer.parseInt((String) obj.get("ExchangeRate")) == 0) {
-            mc.setProperty("ExchangeRate_send_mail", true);
+        if (Integer.parseInt(obj.get("ExchangeRate").toString()) == 0) {
+            mc.setProperty("ExchangeRate_send_mail", "true");
+        } else {
+            mc.setProperty("ExchangeRate_send_mail", "false");
         }
 
-        if (Integer.parseInt((String) obj.get("Loan")) == 0) {
-            mc.setProperty("Loan_send_mail", true);
+        if (Integer.parseInt(obj.get("Loan").toString()) == 0) {
+            mc.setProperty("Loan_send_mail", "true");
+        } else {
+            mc.setProperty("Loan_send_mail", "false");
         }
 
-        if (Integer.parseInt((String) obj.get("Customer")) == 0) {
-            mc.setProperty("Customer_send_mail", true);
+        if (Integer.parseInt(obj.get("Customer").toString()) == 0) {
+            mc.setProperty("Customer_send_mail", "true");
+        } else {
+            mc.setProperty("Customer_send_mail", "false");
         }
 
         return true;
