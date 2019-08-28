@@ -25,13 +25,16 @@ public class SampleClassMediator extends AbstractMediator implements
         ManagedLifecycle {
 
     private static final Log log = LogFactory.getLog(SampleClassMediator.class);
-    public static String File_Count_Path = "/user/shanaka/";
+    public static String File_Count_Path = System.getProperty("user.dir") + "/file_count.json";
 
     public boolean mediate(MessageContext mc) {
 
-        Boolean line_count = (Boolean) mc.getProperty("line_count");
+        Boolean line_count = false;
+        if (mc.getProperty("line_count").equals("true")) {
+            line_count = true;
+        }
         String account_flow = mc.getProperty("account_flow").toString();
-        long lineCount = 0;
+        double lineCount = 0;
         int file_count = 0;
         int Account_file_count = 0;
         int Exchange_rate_count = 0;
@@ -40,72 +43,99 @@ public class SampleClassMediator extends AbstractMediator implements
         String file_path = (String) mc.getProperty("file_path");
 
         File input_file = new File(file_path);
-        if (line_count == true && input_file.exists()) {
-            Path path = Paths.get(file_path);
-            try {
-                lineCount = Files.lines(path).count();
-                file_count = (int) Math.ceil(lineCount / 10000);
-            } catch (IOException e) {
-                log.error("Error in json conversion", e);
-            }
+        if (line_count == true) {
+            JSONObject obj = new JSONObject();
+            if (input_file.exists()) {
+                Path path = Paths.get(file_path);
+                switch (account_flow) {
+                    case "Account":
+                        mc.setProperty("Account_send_mail", false);
+                        break;
+                    case "ExchangeRate":
+                        mc.setProperty("ExchangeRate_send_mail", false);
+                        break;
+                    case "Loan":
+                        mc.setProperty("Loan_send_mail", false);
+                        break;
+                    case "Customer":
+                        mc.setProperty("Customer_send_mail", false);
+                        break;
+                }
 
-            File count_file = new File(File_Count_Path);
+                try {
+                    lineCount = Files.lines(path).count();
+                    file_count = (int) Math.ceil(lineCount / 10000);
+                } catch (IOException e) {
+                    log.error("Error in json conversion", e);
+                }
+
+                File count_file = new File(File_Count_Path);
 
 //            String[] file_url = file_path.split("/");
 //            String file_name = file_url[file_url.length - 1];
 
-            JSONObject obj = new JSONObject();
-            if (count_file.exists()) {
+                if (count_file.exists()) {
 
-                Reader reader = null;
-                try {
-                    reader = new FileReader(File_Count_Path);
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
+                    Reader reader = null;
+                    try {
+                        reader = new FileReader(File_Count_Path);
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                    JSONParser parser = new JSONParser();
+                    try {
+                        obj = (JSONObject) parser.parse(reader);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } catch (ParseException e) {
+                        e.printStackTrace();
+                    }
+
+                    switch (account_flow) {
+                        case "Account":
+                            obj.put("Account", file_count);
+                            break;
+                        case "ExchangeRate":
+                            obj.put("ExchangeRate", file_count);
+                            break;
+                        case "Loan":
+                            obj.put("Loan", file_count);
+                            break;
+                        case "Customer":
+                            obj.put("Customer", file_count);
+                            break;
+                    }
+                } else {
+                    switch (account_flow) {
+                        case "Account":
+                            Account_file_count = file_count;
+                            break;
+                        case "ExchangeRate":
+                            Exchange_rate_count = file_count;
+                            break;
+                        case "Loan":
+                            Loan_file_count = file_count;
+                            break;
+                        case "Customer":
+                            Customer_file_count = file_count;
+                            break;
+                    }
+                    obj.put("Account", Account_file_count);
+                    obj.put("ExchangeRate", Exchange_rate_count);
+                    obj.put("Loan", Loan_file_count);
+                    obj.put("Customer", Customer_file_count);
                 }
-                JSONParser parser = new JSONParser();
                 try {
-                    obj = (JSONObject) parser.parse(reader);
+                    FileWriter fw = new FileWriter(File_Count_Path);
+                    fw.write(obj.toString());
+                    fw.close();
                 } catch (IOException e) {
                     e.printStackTrace();
-                } catch (ParseException e) {
-                    e.printStackTrace();
                 }
 
-                switch (account_flow) {
-                    case "Account":
-                        obj.put("Accounts", Account_file_count);
-                    case "Exchange":
-                        obj.put("ExchangeRates", Exchange_rate_count);
-                    case "Loan":
-                        obj.put("Loan", Loan_file_count);
-                    case "Customer":
-                        obj.put("Customer", Customer_file_count);
-                }
-            } else {
-                switch (account_flow) {
-                    case "Account":
-                        Account_file_count = file_count;
-                    case "Exchange":
-                        Exchange_rate_count = file_count;
-                    case "Loan":
-                        Loan_file_count = file_count;
-                    case "Customer":
-                        Customer_file_count = file_count;
-                        obj.put("Accounts", Account_file_count);
-                        obj.put("ExchangeRates", Exchange_rate_count);
-                        obj.put("Loan", Loan_file_count);
-                        obj.put("Customer", Customer_file_count);
-                }
             }
-            try {
-                FileWriter fw = new FileWriter(File_Count_Path);
-                fw.write(obj.toString());
-                fw.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        } else if (line_count = false) {
+
+        } else {
             JSONObject obj = new JSONObject();
             Reader reader = null;
             try {
@@ -124,14 +154,19 @@ public class SampleClassMediator extends AbstractMediator implements
 
             switch (account_flow) {
                 case "Account":
-                    obj.put("Accounts", (int) obj.get("Accounts") - 1);
-                case "Exchange":
-                    obj.put("ExchangeRates", (int) obj.get("ExchangeRates") - 1);
+                    obj.put("Account", (int) obj.get("Account") - 1);
+                    break;
+                case "ExchangeRate":
+                    obj.put("ExchangeRate", (int) obj.get("ExchangeRate") - 1);
+                    break;
                 case "Loan":
                     obj.put("Loan", (int) obj.get("Loan") - 1);
+                    break;
                 case "Customer":
                     obj.put("Customer", (int) obj.get("Customer") - 1);
+                    break;
             }
+
             try {
                 FileWriter fw = new FileWriter(File_Count_Path);
                 fw.write(obj.toString());
@@ -139,6 +174,7 @@ public class SampleClassMediator extends AbstractMediator implements
             } catch (IOException e) {
                 e.printStackTrace();
             }
+
         }
 
         JSONObject obj = new JSONObject();
@@ -157,17 +193,19 @@ public class SampleClassMediator extends AbstractMediator implements
             e.printStackTrace();
         }
 
-        if ((int) obj.get("Accounts") == 0) {
+        if (Integer.parseInt((String) obj.get("Account")) == 0) {
             mc.setProperty("Account_send_mail", true);
         }
-        if ((int) obj.get("ExchangeRates") == 0) {
 
-            mc.setProperty("ExchangeRates_send_mail", true);
+        if (Integer.parseInt((String) obj.get("ExchangeRate")) == 0) {
+            mc.setProperty("ExchangeRate_send_mail", true);
         }
-        if ((int) obj.get("Loan") == 0) {
+
+        if (Integer.parseInt((String) obj.get("Loan")) == 0) {
             mc.setProperty("Loan_send_mail", true);
         }
-        if ((int) obj.get("Customer") == 0) {
+
+        if (Integer.parseInt((String) obj.get("Customer")) == 0) {
             mc.setProperty("Customer_send_mail", true);
         }
 
