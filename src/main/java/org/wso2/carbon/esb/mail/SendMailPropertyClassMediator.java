@@ -1,4 +1,4 @@
-package org.wso2.carbon.esb.sample;
+package org.wso2.carbon.esb.mail;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -13,11 +13,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public class SampleClassMediator extends AbstractMediator implements
+public class SendMailPropertyClassMediator extends AbstractMediator implements
         ManagedLifecycle {
 
-    private static final Log log = LogFactory.getLog(SampleClassMediator.class);
-
+    private static final Log log = LogFactory.getLog(SendMailPropertyClassMediator.class);
 
     public boolean mediate(MessageContext mc) {
 
@@ -31,9 +30,7 @@ public class SampleClassMediator extends AbstractMediator implements
         if (lineCount == true) {
             updateFileCount(filePath, mc, accountFlow);
         } else {
-
             checkFileCount(mc, accountFlow);
-
         }
 
         return true;
@@ -60,9 +57,16 @@ public class SampleClassMediator extends AbstractMediator implements
 
         Object val = context.getProperty(property);
         if (val != null)
-            return Integer.parseInt(val.toString()) - 1;
-        else
-            return 1;
+            if (Integer.parseInt(val.toString()) > 1)
+                return Integer.parseInt(val.toString()) - 1;
+            else
+                return 0;
+        else {
+            log.debug(property + " Value is null thus setting default value of 1000");
+            return 1000;
+
+        }
+
     }
 
     //This value is checked in the mediation flow to decide whether files are finished processing
@@ -70,8 +74,10 @@ public class SampleClassMediator extends AbstractMediator implements
 
         if (count == 0) {
             context.setProperty(property, "true");
+            log.debug(property + " is set to true");
         } else {
             context.setProperty(property, "false");
+            log.debug(property + " is set to false");
         }
     }
 
@@ -79,7 +85,7 @@ public class SampleClassMediator extends AbstractMediator implements
     private void updateFileCount(String file_path, MessageContext mc, String account_flow) {
 
         double lineCount = 0;
-        int file_count = 0;
+        int fileCount = 0;
         File input_file = new File(file_path);
         //JSONObject obj = new JSONObject();
         if (input_file.exists()) {
@@ -87,26 +93,47 @@ public class SampleClassMediator extends AbstractMediator implements
 
             try {
                 lineCount = Files.lines(path).count();
-                file_count = (int) Math.ceil(lineCount / 10000);
+                fileCount = (int) Math.ceil(lineCount / 10000);
+                log.debug(account_flow + "file is split in to " + file_path + " parts");
             } catch (IOException e) {
                 log.error("Error in json conversion", e);
             }
 
             switch (account_flow) {
                 case "Account":
-                    mc.setProperty("accountFileCount", file_count);
+                    mc.setProperty("accountFileCount", Integer.parseInt(String.valueOf(fileCount)));
+                    mc.setProperty("accountSendMail", "false");
                     break;
                 case "ExchangeRate":
-                    mc.setProperty("exchangeRateFileCount", file_count);
+                    mc.setProperty("exchangeRateFileCount", Integer.parseInt(String.valueOf(fileCount)));
+                    mc.setProperty("exchangeRateSendMail", "false");
                     break;
                 case "Loan":
-                    mc.setProperty("loanFileCount", file_count);
+                    mc.setProperty("loanFileCount", Integer.parseInt(String.valueOf(fileCount)));
+                    mc.setProperty("loanSendMail", "false");
                     break;
                 case "Customer":
-                    mc.setProperty("customerFileCount", file_count);
+                    mc.setProperty("customerFileCount", Integer.parseInt(String.valueOf(fileCount)));
+                    mc.setProperty("customerSendMail", "false");
                     break;
             }
 
+        } else {
+            switch (account_flow) {
+                case "Account":
+                    mc.setProperty("accountFileCount", "0");
+                    break;
+                case "ExchangeRate":
+                    mc.setProperty("exchangeRateFileCount", "0");
+                    break;
+                case "Loan":
+                    mc.setProperty("loanFileCount", "0");
+
+                    break;
+                case "Customer":
+                    mc.setProperty("customerFileCount", "0");
+                    break;
+            }
         }
 
     }
@@ -118,27 +145,27 @@ public class SampleClassMediator extends AbstractMediator implements
         int exchangeRateFileCount = deductCountValue("exchangeRateFileCount", mc);
         int loanFileCount = deductCountValue("loanFileCount", mc);
         int customerFileCount = deductCountValue("customerFileCount", mc);
+        log.debug("check file count of " + account_flow + " flow");
 
         switch (account_flow) {
             case "Account":
                 mc.setProperty("accountFileCount", Integer.toString(accountFileCount));
-                setMailProperty(accountFileCount, mc, "Account_send_mail");
+                setMailProperty(accountFileCount, mc, "accountSendMail");
                 break;
             case "ExchangeRate":
                 mc.setProperty("exchangeRateFileCount", Integer.toString(exchangeRateFileCount));
-                setMailProperty(accountFileCount, mc, "ExchangeRate_send_mail");
+                setMailProperty(exchangeRateFileCount, mc, "exchangeRateSendMail");
                 break;
             case "Loan":
                 mc.setProperty("loanFileCount", Integer.toString(loanFileCount));
-                setMailProperty(accountFileCount, mc, "Loan_send_mail");
+                setMailProperty(loanFileCount, mc, "loanSendMail");
                 break;
             case "Customer":
                 mc.setProperty("customerFileCount", Integer.toString(customerFileCount));
-                setMailProperty(accountFileCount, mc, "Customer_send_mail");
+                setMailProperty(customerFileCount, mc, "customerSendMail");
                 break;
         }
 
     }
 
 }
-
