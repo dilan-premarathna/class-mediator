@@ -82,24 +82,24 @@ public class SendMailPropertyClassMediator extends AbstractMediator implements
     }
 
     //Update the property value which contains the file count of each mediation
-    private void updateFileCount(String file_path, MessageContext mc, String account_flow) {
+    private void updateFileCount(String filePath, MessageContext mc, String accountFlow) {
 
         double lineCount = 0;
         int fileCount = 0;
-        File input_file = new File(file_path);
+        File inputFile = new File(filePath);
         //JSONObject obj = new JSONObject();
-        if (input_file.exists()) {
-            Path path = Paths.get(file_path);
+        if (inputFile.exists()) {
+            Path path = Paths.get(filePath);
 
             try {
                 lineCount = Files.lines(path).count();
                 fileCount = (int) Math.ceil(lineCount / 10000);
-                log.debug(account_flow + "file is split in to " + file_path + " parts");
+                log.debug(accountFlow + "file is split in to " + filePath + " parts");
             } catch (IOException e) {
                 log.error("Error in json conversion", e);
             }
 
-            switch (account_flow) {
+            switch (accountFlow) {
                 case "Account":
                     mc.setProperty("accountFileCount", Integer.parseInt(String.valueOf(fileCount)));
                     mc.setProperty("accountSendMail", "false");
@@ -119,7 +119,7 @@ public class SendMailPropertyClassMediator extends AbstractMediator implements
             }
 
         } else {
-            switch (account_flow) {
+            switch (accountFlow) {
                 case "Account":
                     mc.setProperty("accountFileCount", "0");
                     break;
@@ -139,15 +139,15 @@ public class SendMailPropertyClassMediator extends AbstractMediator implements
     }
 
     // check the value of the file count and to set the mail sending property
-    private void checkFileCount(MessageContext mc, String account_flow) {
+    private void checkFileCount(MessageContext mc, String accountFlow) {
 
         int accountFileCount = deductCountValue("accountFileCount", mc);
         int exchangeRateFileCount = deductCountValue("exchangeRateFileCount", mc);
         int loanFileCount = deductCountValue("loanFileCount", mc);
         int customerFileCount = deductCountValue("customerFileCount", mc);
-        log.debug("check file count of " + account_flow + " flow");
+        log.debug("check file count of " + accountFlow + " flow");
 
-        switch (account_flow) {
+        switch (accountFlow) {
             case "Account":
                 mc.setProperty("accountFileCount", Integer.toString(accountFileCount));
                 setMailProperty(accountFileCount, mc, "accountSendMail");
