@@ -17,12 +17,18 @@ public class SendMailPropertyClassMediator extends AbstractMediator implements
         ManagedLifecycle {
 
     private static final Log log = LogFactory.getLog(SendMailPropertyClassMediator.class);
+    private static volatile int accountFileCount;
+    private static volatile int exchangeRateFileCount;
+    private static volatile int loanFileCount;
+    private static volatile int customerFileCount;
 
     public boolean mediate(MessageContext mc) {
 
         Boolean lineCount = false;
-        if (mc.getProperty("lineCount").equals("true")) {
-            lineCount = true;
+        if (mc.getProperty("lineCount") != null) {
+            if (mc.getProperty("lineCount").equals("true")) {
+                lineCount = true;
+            }
         }
         String accountFlow = getPropertyString("accountFlow", mc);
         String filePath = getPropertyString("filePath", mc);
@@ -53,25 +59,10 @@ public class SendMailPropertyClassMediator extends AbstractMediator implements
             return null;
     }
 
-    private int deductCountValue(String property, MessageContext context) {
-
-        Object val = context.getProperty(property);
-        if (val != null)
-            if (Integer.parseInt(val.toString()) > 1)
-                return Integer.parseInt(val.toString()) - 1;
-            else
-                return 0;
-        else {
-            log.debug(property + " Value is null thus setting default value of 1000");
-            return 1000;
-
-        }
-
-    }
-
     //This value is checked in the mediation flow to decide whether files are finished processing
     private void setMailProperty(int count, MessageContext context, String property) {
 
+        log.debug("File count value is " + count);
         if (count == 0) {
             context.setProperty(property, "true");
             log.debug(property + " is set to true");
@@ -87,53 +78,39 @@ public class SendMailPropertyClassMediator extends AbstractMediator implements
         double lineCount = 0;
         int fileCount = 0;
         File inputFile = new File(filePath);
-        //JSONObject obj = new JSONObject();
+
         if (inputFile.exists()) {
             Path path = Paths.get(filePath);
 
             try {
                 lineCount = Files.lines(path).count();
                 fileCount = (int) Math.ceil(lineCount / 10000);
-                log.debug(accountFlow + "file is split in to " + filePath + " parts");
+                log.debug(accountFlow + "file in location " + filePath + " is split in to " + fileCount + " parts");
             } catch (IOException e) {
-                log.error("Error in json conversion", e);
+                log.error("Error in file read", e);
             }
 
             switch (accountFlow) {
                 case "Account":
-                    mc.setProperty("accountFileCount", Integer.parseInt(String.valueOf(fileCount)));
+                    accountFileCount = fileCount;
                     mc.setProperty("accountSendMail", "false");
                     break;
                 case "ExchangeRate":
-                    mc.setProperty("exchangeRateFileCount", Integer.parseInt(String.valueOf(fileCount)));
+                    exchangeRateFileCount = fileCount;
                     mc.setProperty("exchangeRateSendMail", "false");
                     break;
                 case "Loan":
-                    mc.setProperty("loanFileCount", Integer.parseInt(String.valueOf(fileCount)));
+                    loanFileCount = fileCount;
                     mc.setProperty("loanSendMail", "false");
                     break;
                 case "Customer":
-                    mc.setProperty("customerFileCount", Integer.parseInt(String.valueOf(fileCount)));
+                    customerFileCount = fileCount;
                     mc.setProperty("customerSendMail", "false");
                     break;
             }
 
         } else {
-            switch (accountFlow) {
-                case "Account":
-                    mc.setProperty("accountFileCount", "0");
-                    break;
-                case "ExchangeRate":
-                    mc.setProperty("exchangeRateFileCount", "0");
-                    break;
-                case "Loan":
-                    mc.setProperty("loanFileCount", "0");
-
-                    break;
-                case "Customer":
-                    mc.setProperty("customerFileCount", "0");
-                    break;
-            }
+            log.debug(accountFlow + " flow does not have a input file");
         }
 
     }
@@ -141,27 +118,39 @@ public class SendMailPropertyClassMediator extends AbstractMediator implements
     // check the value of the file count and to set the mail sending property
     private void checkFileCount(MessageContext mc, String accountFlow) {
 
-        int accountFileCount = deductCountValue("accountFileCount", mc);
-        int exchangeRateFileCount = deductCountValue("exchangeRateFileCount", mc);
-        int loanFileCount = deductCountValue("loanFileCount", mc);
-        int customerFileCount = deductCountValue("customerFileCount", mc);
         log.debug("check file count of " + accountFlow + " flow");
 
         switch (accountFlow) {
             case "Account":
-                mc.setProperty("accountFileCount", Integer.toString(accountFileCount));
+                if (accountFileCount > 1) {
+                    accountFileCount -= 1;
+                } else {
+                    accountFileCount = 0;
+                }
                 setMailProperty(accountFileCount, mc, "accountSendMail");
                 break;
             case "ExchangeRate":
-                mc.setProperty("exchangeRateFileCount", Integer.toString(exchangeRateFileCount));
+                if (exchangeRateFileCount > 1) {
+                    exchangeRateFileCount -= 1;
+                } else {
+                    exchangeRateFileCount = 0;
+                }
                 setMailProperty(exchangeRateFileCount, mc, "exchangeRateSendMail");
                 break;
             case "Loan":
-                mc.setProperty("loanFileCount", Integer.toString(loanFileCount));
+                if (loanFileCount > 1) {
+                    loanFileCount -= 1;
+                } else {
+                    loanFileCount = 0;
+                }
                 setMailProperty(loanFileCount, mc, "loanSendMail");
                 break;
             case "Customer":
-                mc.setProperty("customerFileCount", Integer.toString(customerFileCount));
+                if (customerFileCount > 1) {
+                    customerFileCount -= 1;
+                } else {
+                    customerFileCount = 0;
+                }
                 setMailProperty(customerFileCount, mc, "customerSendMail");
                 break;
         }
